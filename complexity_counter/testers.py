@@ -3,7 +3,6 @@ import numpy as np
 from scipy.optimize import least_squares
 
 
-
 # for base_size in range(5):
 #     bases += [[(lambda y: np.vectorize(lambda x, p: p * x**y))(i) for i in [0,base_size]],
 #          [(lambda y: (lambda x, p: p * x**y * np.log(x)))(i) for i in [0, base_size]],
@@ -94,7 +93,6 @@ def test_timings(algorithm, number_of_tests):
         algorithm.after(number_of_data)
 
     return data, timings
-
 
 class TimeItResult:
     def __init__(self, computation_complexity, factors, base):
