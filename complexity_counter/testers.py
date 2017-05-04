@@ -40,7 +40,7 @@ def test(algorithm, log_level=logging.WARNING, timeout=30):
     try:
         algorithm.is_decorated()
     except AttributeError:
-        from complexity_counter.atributes import TestedAlgorithmError
+        from complexity_counter import TestedAlgorithmError
         raise TestedAlgorithmError("Provided class is not decorated by @Complex_count")
 
     logging.basicConfig(level=log_level)
