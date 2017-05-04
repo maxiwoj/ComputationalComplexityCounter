@@ -65,8 +65,9 @@ def test(algorithm, log_level=logging.WARNING, timeout=30):
 
     if base % base_types == 0:
         computation_complexity = complexities[base % base_types].get(complexity, str.format("O(n^{})", complexity))
-    else: # base % base_types == 1:
-        computation_complexity = complexities[base % base_types].get(complexity, str.format("O(n^{} log(n))", complexity))
+    else:  # base % base_types == 1:
+        computation_complexity = complexities[base % base_types].get(complexity,
+                                                                     str.format("O(n^{} log(n))", complexity))
     # elif base % base_types == 2:
     #     computation_complexity = complexities[base % base_types].get(complexity, str.format("O({}^n)", complexity))
 
@@ -93,6 +94,7 @@ def test_timings(algorithm, number_of_tests):
         algorithm.after(number_of_data)
 
     return data, timings
+
 
 class TimeItResult:
     def __init__(self, computation_complexity, factors, base):
