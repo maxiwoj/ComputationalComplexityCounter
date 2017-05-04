@@ -1,6 +1,8 @@
 from time import time
 
-from complexity_counter.testers import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class TestedAlgorithmError(BaseException):
@@ -15,7 +17,7 @@ class TestedAlgorithmError(BaseException):
 
 
 def complex_count(cls):
-    """Class decorator sllowing to test complexity of given algorithm"""
+    """Class decorator allowing to test complexity of given algorithm"""
     if not issubclass(cls, Algorithm):
         raise TestedAlgorithmError("Provided class is not a subclass of Algorithm class")
 

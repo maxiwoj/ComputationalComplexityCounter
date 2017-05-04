@@ -3,40 +3,43 @@ import numpy as np
 from scipy.optimize import least_squares
 
 from complexity_counter.atributes import TestedAlgorithmError
-from complexity_counter.result import TimeItResult
 
-logger = logging.getLogger(__name__)
-
-base_types = 2
-bases = list()
 # for base_size in range(5):
 #     bases += [[(lambda y: np.vectorize(lambda x, p: p * x**y))(i) for i in [0,base_size]],
 #          [(lambda y: (lambda x, p: p * x**y * np.log(x)))(i) for i in [0, base_size]],
 #          [(lambda y: np.vectorize(lambda x, p: p * y**x))(i) for i in [0, base_size]]]
 
-for base_size in range(5):
-    bases += [[(lambda y: np.vectorize(lambda x, p: p * x ** y))(i) for i in [0, base_size]],
-              [(lambda y: (lambda x, p: p * x ** y * np.log(x)))(i) for i in [0, base_size]]]
 
-complexities = {
-    0: {0: "O(c)", 1: "O(n)"},
-    1: {0: "O(log(n))", 1: "O(n log(n))"},
-    2: {0: "O(c)", 1: "O(c)"}
-}
+# def model(p, x, base):
+#     return sum([fun(x, p[i]) for i, fun in enumerate(base)])
+#
+#
+# def residuals(p, x, y, base):
+#     return y - model(p, x, base)
 
 
-def model(p, x, base):
-    return sum([fun(x, p[i]) for i, fun in enumerate(base)])
+def test(algorithm, log_level=logging.WARNING, timeout=30):
+    base_types = 2
+    bases = list()
+    for base_size in range(5):
+        bases += [[(lambda y: np.vectorize(lambda x, p: p * x ** y))(i) for i in [0, base_size]],
+                  [(lambda y: (lambda x, p: p * x ** y * np.log(x)))(i) for i in [0, base_size]]]
 
+    complexities = {
+        0: {0: "O(c)", 1: "O(n)"},
+        1: {0: "O(log(n))", 1: "O(n log(n))"},
+        2: {0: "O(c)", 1: "O(c)"}
+    }
 
-def residuals(p, x, y, base):
-    return y - model(p, x, base)
+    def model(p, x, base):
+        return sum([fun(x, p[i]) for i, fun in enumerate(base)])
 
+    def residuals(p, x, y, base):
+        return y - model(p, x, base)
 
-def test(algorithm, log_level=logging.warning, timeout=30):
     algorithm = algorithm()
     try:
-        algorithm.isDecorated()
+        algorithm.is_decorated()
     except AttributeError:
         raise TestedAlgorithmError("Provided class is not decorated by @Complex_count")
 
@@ -79,7 +82,7 @@ def test_timings(algorithm, number_of_tests):
         timings[i] = algorithm.run(number_of_data)
         algorithm.after(number_of_data)
 
-    print(timings)
+    # print(timings)
     i = len(timings) - 3
     while timings[len(timings) - 1] < 3000 and len(timings) < 15:
         number_of_data = 9 ** (len(timings) - i)
@@ -90,3 +93,32 @@ def test_timings(algorithm, number_of_tests):
         algorithm.after(number_of_data)
 
     return data, timings
+
+
+class TimeItResult:
+    def __init__(self, computation_complexity, factors, base):
+        self.computation_complexity = computation_complexity
+        self.factors = factors
+        self.base = base
+
+    def time_predict(self, x):
+        # return model(self.factors, np.array([x]), self.base)[0]
+        return sum([fun(np.array([x]), self.factors[i]) for i, fun in enumerate(self.base)])[0]
+
+    def max_complexity_predict(self, y):
+        xmax = 10
+        xmin = 0
+        while y - self.time_predict(xmax) > 0:
+            # print(y - self.time_predict(xmax))
+            # print(str.format("xmax: {}, xmin: {}", xmax, xmin))
+            xmax = xmax * 10
+        est = int((xmax + xmin) / 2)
+        while abs(y - self.time_predict(est)) > 0.0001 and xmax - xmin > 1:
+            if (y - self.time_predict(est)) > 0:
+                xmin = int((xmax + xmin) / 2)
+            else:
+                xmax = est
+            est = int((xmax + xmin) / 2)
+            # print(y - self.time_predict(est))
+            # print(str.format("xmax: {}, xmin: {}, est: {}", xmax, xmin, est))
+        return est
