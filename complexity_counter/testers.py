@@ -6,8 +6,10 @@ from scipy.optimize import least_squares
 base_types = 2
 bases = list()
 for base_size in range(5):
-    bases += [[(lambda y: np.vectorize(lambda x, p: p * x ** y))(i) for i in [base_size]],
-              [(lambda y: (lambda x, p: p * x ** y * np.log(x)))(i) for i in [base_size]]]
+    bases += [[(lambda y: np.vectorize(lambda x, p: p * x ** y))(i)
+               for i in [base_size]],
+              [(lambda y: (lambda x, p: p * x ** y * np.log(x)))(i)
+               for i in [base_size]]]
 
 complexities = {
     0: {0: "O(c)", 1: "O(n)"},
@@ -16,28 +18,32 @@ complexities = {
 
 
 def model(p, x, base):
-    """Function that gives value for a point in base of functions with p as factors"""
+    """Function that gives value for a point in base of functions with p as
+    factors """
     return sum([fun(x, p[i]) for i, fun in enumerate(base)])
 
 
 def residuals(p, x, y, base):
-    """Function returning difference bettwen value of the function and the actual value"""
+    """Function returning difference bettwen value of the function and the
+    actual value """
     return y - model(p, x, base)
 
 
 def complexity_test(algorithm, log_level=logging.WARNING, timeout=30):
-    """This function is the function to test the complexity for a given algorithm
-    Attributes:
-        algorithm - class implementing Algorithm class, that is wanted to be tested
-        log_level - if set to logging.INFO - prints all the logs from testing the algorithm
-        timeout - maximal time, the complexity testing must fit in.
+    """This function is the function to test the complexity for a given
+    algorithm
+    Attributes: algorithm - class implementing Algorithm class,
+    that is wanted to be tested log_level - if set to logging.INFO - prints
+    all the logs from testing the algorithm timeout - maximal time,
+    the complexity testing must fit in.
     """
     algorithm = algorithm()
     try:
         algorithm.is_decorated()
     except AttributeError:
         from complexity_counter import TestedAlgorithmError
-        raise TestedAlgorithmError("Provided class is not decorated by @Complex_count")
+        raise TestedAlgorithmError("Provided class is not decorated by "
+                                   "@Complex_count")
 
     logging.basicConfig(level=log_level)
 
@@ -54,7 +60,8 @@ def complexity_test(algorithm, log_level=logging.WARNING, timeout=30):
     x0_start_point = np.zeros(1)
 
     for base in bases:
-        results.append(least_squares(residuals, x0_start_point, args=(data, timings, base)))
+        results.append(least_squares(residuals, x0_start_point,
+                                     args=(data, timings, base)))
 
     costs = [result.cost for result in results]
     base = costs.index(min(costs))
@@ -65,16 +72,19 @@ def complexity_test(algorithm, log_level=logging.WARNING, timeout=30):
         complexity -= 1
 
     if base % base_types == 0:
-        computation_complexity = complexities[base % base_types].get(complexity, str.format("O(n^{})", complexity))
+        computation_complexity = complexities[base % base_types].get(
+            complexity, str.format("O(n^{})", complexity))
     else:
-        computation_complexity = complexities[base % base_types].get(complexity,
-                                                                     str.format("O(n^{} log(n))", complexity))
+        computation_complexity = complexities[base % base_types].get(
+            complexity, str.format("O(n^{} log(n))", complexity))
 
     if not fully_tested:
-        computation_complexity = "Computation Complexity worse than: " + computation_complexity
+        computation_complexity = "Computation Complexity worse than: " + \
+                                 computation_complexity
 
     from complexity_counter import TimeItResult
-    return TimeItResult(computation_complexity, factors, bases[base], data, timings)
+    return TimeItResult(computation_complexity, factors, bases[base], data,
+                        timings)
 
 
 def test_timings(algorithm, timeout):
@@ -85,7 +95,8 @@ def test_timings(algorithm, timeout):
     range_of_tests = 5
     number_of_tries = 5
 
-    data = np.array([5 ** (x % range_of_tests) for x in range(1, number_of_tries * range_of_tests + 1)])
+    data = np.array([5 ** (x % range_of_tests)
+                     for x in range(1, number_of_tries * range_of_tests + 1)])
     timings = np.zeros(range_of_tests * number_of_tries)
     import signal
     signal.signal(signal.SIGALRM, signalhandler)
@@ -109,7 +120,8 @@ def test_timings(algorithm, timeout):
             timings[i:] = [-1] * len(timings[i:])
         finally:
             signal.alarm(0)
-            algorithm.after(number_of_data)
+            if algorithm.need_to_clean:
+                algorithm.after(number_of_data)
         time_left = time_left - (time() - start)
 
     i = 0
@@ -135,8 +147,8 @@ def test_timings(algorithm, timeout):
                     data = data[:-1]
             finally:
                 signal.alarm(0)
-                algorithm.after(number_of_data)
-
+                if algorithm.need_to_clean:
+                    algorithm.after(number_of_data)
             time_left = time_left - (time() - start)
 
     signal.signal(signal.SIGALRM, signal.SIG_DFL)

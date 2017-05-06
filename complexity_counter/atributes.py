@@ -6,7 +6,8 @@ logger = logging.getLogger(__name__)
 
 
 class TestedAlgorithmError(BaseException):
-    """class for wrong implementations of the algorithm to be tested computation complexity
+    """class for wrong implementations of the algorithm to be tested
+    computation complexity
 
     Attributes:
         message -- explanation of why the specific transition is not allowed
@@ -19,24 +20,31 @@ class TestedAlgorithmError(BaseException):
 def complex_count(cls):
     """Class decorator allowing to test complexity of given algorithm"""
     if not issubclass(cls, Algorithm):
-        raise TestedAlgorithmError("Provided class is not a subclass of Algorithm class")
+        raise TestedAlgorithmError("Provided class is not a subclass of "
+                                   "Algorithm class")
 
     class Wrapped(object):
         def __init__(self):
             self.clsInstance = cls()
+            self.need_to_clean = False
 
         def before(self, complexity):
-            logger.info(str.format("setting up environment for complexity: {}", complexity))
+            logger.info(str.format("setting up environment for complexity: {}",
+                                   complexity))
             self.clsInstance.before(complexity)
+            self.need_to_clean = True
 
         @check_time
         def run(self, complexity):
-            logger.info(str.format("checking time for complexity: {}", complexity))
+            logger.info(str.format("checking time for complexity: {}",
+                                   complexity))
             self.clsInstance.run(complexity)
 
         def after(self, complexity):
-            logger.info(str.format("cleaning up environment for complexity: {}", complexity))
+            logger.info(str.format("cleaning up environment for complexity: "
+                                   "{}", complexity))
             self.clsInstance.after(complexity)
+            self.need_to_clean = False
 
         def is_decorated(self):
             return True
@@ -58,31 +66,33 @@ def check_time(fun):
 
 
 class Algorithm(object):
-    """This class should be implemented with your 
+    """This class should be implemented with your
     own algorithm you want to test computation complexity"""
-
     def before(self, number_of_data):
-        """This method is responsible for preparation data for algorithm to test"""
-        raise NotImplementedError("Tested class should override methods of Algorithm class: before, run, after")
+        """This method is responsible for preparation data for algorithm to
+        test """
+        raise NotImplementedError("Tested class should override methods of "
+                                  "Algorithm class: before, run, after")
 
     def run(self, number_of_data):
         """The main method for testing the time of algorithm"""
-        raise NotImplementedError("Tested class should override methods of Algorithm class: before, run, after")
+        raise NotImplementedError("Tested class should override methods of "
+                                  "Algorithm class: before, run, after")
 
     def after(self, number_of_data):
-        """Method responsible for cleaning up after testing the time of the algorithm"""
-        raise NotImplementedError("Tested class should override methods of Algorithm class: before, run, after")
+        """Method responsible for cleaning up after testing the time of the
+        algorithm """
+        raise NotImplementedError("Tested class should override methods of "
+                                  "Algorithm class: before, run, after")
 
 
 class TimeItResult:
-    """Object of this class is the result of the test() function
-    
-    Attributes:
-        data - tested number_of_data
-        timings - time of the algorithm for corresponding number_of_data
-        base - base of the function modelling the algorithm complexity
-        factors - corrensponding factors for the base functions
-        computation_complexity - string representation of the complexity in notation: O(f(n))
+    """Object of this class is the result of the test() function Attributes:
+    data - tested number_of_data timings - time of the algorithm for
+    corresponding number_of_data base - base of the function modelling the
+    algorithm complexity factors - corrensponding factors for the base
+    functions computation_complexity - string representation of the
+    complexity in notation: O(f(n))
     """
     def __init__(self, computation_complexity, factors, base, data, timings):
         self.data = data
@@ -92,14 +102,13 @@ class TimeItResult:
         self.base = base
 
     def time_predict(self, number_of_data):
-        """This function allows to predict the time needed to 
-        complete the algorithm for given number_of_data. Note, 
+        """This function allows to predict the time needed to
+        complete the algorithm for given number_of_data. Note,
         that it's results for small and much bigger number_of_data
         may differ from the real time, that the algorithm needs.
         """
         from complexity_counter import model
         return model(self.factors, np.array([number_of_data]), self.base)[0]
-        # return sum([fun(np.array([x]), self.factors[i]) for i, fun in enumerate(self.base)])[0]
 
     def max_complexity_predict(self, time):
         """This function allows to predict maximal number_of_data
