@@ -26,7 +26,7 @@ Usage
 --------------------
 To test the algorithm prepare class that implements class Algorithm from complexity_counter. Your class should implement those three methods: before, run, after, and should be decorated by complex_count. Basically it should look like: 
 
-```
+```python
 @complex_count
 class YourClass(Algorithm):
 def before(self, number_of_data):
@@ -39,24 +39,24 @@ def before(self, number_of_data):
 
 To test the computation complexity of the algorithm prepared in method run() You need to run:
 
-```
+```python
 result = complex_test(YourClass)
 ```
     
 As a result you will get a class, that holds information about the complexity of your algorithm.
 To get the complexity in user-friendly form:
-```
+```python
 result.computation_complexity
 ```
 To predict the time needed to complete the algorithm for given number_of_data type
-```
+```python
 result.time_predict(number_of_data)
 ```
 Note, that it's results for small and much bigger number_of_data than tested
 may differ from the real time, that the algorithm needs.
 
 To predict how much data can the tested algorithm process in given time:
- ```
+ ```python
 result.max_complexity_predict(number_of_data)
  ```
 
