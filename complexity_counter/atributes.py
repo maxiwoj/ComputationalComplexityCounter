@@ -108,8 +108,6 @@ class TimeItResult:
         xmax = 10
         xmin = 0
         while time - self.time_predict(xmax) > 0:
-            # print(y - self.time_predict(xmax))
-            # print(str.format("xmax: {}, xmin: {}", xmax, xmin))
             xmax = xmax * 10
         est = int((xmax + xmin) / 2)
         while abs(time - self.time_predict(est)) > 0.0001 and xmax - xmin > 1:
@@ -118,6 +116,4 @@ class TimeItResult:
             else:
                 xmax = est
             est = int((xmax + xmin) / 2)
-            # print(y - self.time_predict(est))
-            # print(str.format("xmax: {}, xmin: {}, est: {}", xmax, xmin, est))
         return est

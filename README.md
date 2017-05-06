@@ -60,7 +60,6 @@ To predict how much data can the tested algorithm process in given time:
 result.max_complexity_predict(number_of_data)
  ```
 
-For more information see the documentation.
 
 Contributing
 ------------
@@ -75,7 +74,6 @@ Script testing the computation complexity for build-in Python function - sorted:
 ```python
 import complexity_counter as complexity
 import random
-
 
 @complexity.complex_count
 class Sort(complexity.Algorithm):
