@@ -11,11 +11,6 @@ for base_size in range(5):
               [(lambda y: (lambda x, p: p * x ** y * np.log(x)))(i)
                for i in [base_size]]]
 
-complexities = {
-    0: {0: "O(c)", 1: "O(n)"},
-    1: {0: "O(log(n))", 1: "O(n log(n))"},
-}
-
 
 def model(p, x, base):
     """Function that gives value for a point in base of functions with p as
@@ -64,27 +59,17 @@ def complexity_test(algorithm, log_level=logging.WARNING, timeout=30):
                                      args=(data, timings, base)))
 
     costs = [result.cost for result in results]
-    base = costs.index(min(costs))
-    factors = list(results[base].x)
-    complexity = int(base / base_types)
+    base_index = costs.index(min(costs))
+    factors = list(results[base_index].x)
+    complexity_index = int(base_index / base_types)
 
-    if not fully_tested:
-        complexity -= 1
-
-    if base % base_types == 0:
-        computation_complexity = complexities[base % base_types].get(
-            complexity, str.format("O(n^{})", complexity))
-    else:
-        computation_complexity = complexities[base % base_types].get(
-            complexity, str.format("O(n^{} log(n))", complexity))
-
-    if not fully_tested:
-        computation_complexity = "Computation Complexity worse than: " + \
-                                 computation_complexity
+    computation_complexity = user_friendly_complexity(fully_tested,
+                                                      complexity_index,
+                                                      base_index)
 
     from complexity_counter import TimeItResult
-    return TimeItResult(computation_complexity, factors, bases[base], data,
-                        timings)
+    return TimeItResult(computation_complexity, factors, bases[base_index],
+                        data, timings)
 
 
 def test_timings(algorithm, timeout):
@@ -153,6 +138,27 @@ def test_timings(algorithm, timeout):
 
     signal.signal(signal.SIGALRM, signal.SIG_DFL)
     return data, timings
+
+
+def user_friendly_complexity(fully_tested, complexity, base_index):
+    complexities = {
+        0: {0: "O(c)", 1: "O(n)"},
+        1: {0: "O(log(n))", 1: "O(n log(n))"},
+    }
+    if not fully_tested:
+        complexity -= 1
+
+    if base_index % base_types == 0:
+        computation_complexity = complexities[base_index % base_types].get(
+            complexity, str.format("O(n^{})", complexity))
+    else:
+        computation_complexity = complexities[base_index % base_types].get(
+            complexity, str.format("O(n^{} log(n))", complexity))
+
+    if not fully_tested:
+        computation_complexity = "Computation Complexity worse than: " + \
+                                 computation_complexity
+    return computation_complexity
 
 
 def signalhandler(signum, frame):

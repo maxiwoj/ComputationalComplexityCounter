@@ -29,7 +29,7 @@ To test the algorithm prepare class that implements class Algorithm from complex
 ```python
 @complex_count
 class YourClass(Algorithm):
-def before(self, number_of_data):
+    def before(self, number_of_data):
         """This method is responsible for preparation data for algorithm to test"""
     def run(self, number_of_data):
         """The main method for testing the time of algorithm"""
