@@ -118,11 +118,11 @@ class TimeItResult:
         xmin = 0
         while time - self.time_predict(xmax) > 0:
             xmax = xmax * 10
-        est = int((xmax + xmin) / 2)
+        est = (xmax + xmin) // 2
         while abs(time - self.time_predict(est)) > 0.0001 and xmax - xmin > 1:
             if (time - self.time_predict(est)) > 0:
-                xmin = int((xmax + xmin) / 2)
+                xmin = (xmax + xmin) // 2
             else:
                 xmax = est
-            est = int((xmax + xmin) / 2)
+            est = (xmax + xmin) // 2
         return est
