@@ -1,7 +1,13 @@
 import logging
-from time import time
+import signal
+import time
 import numpy as np
+import os
+import multiprocessing
 from scipy.optimize import least_squares
+
+from complexity_counter import TimeItResult
+from complexity_counter import TestedAlgorithmError
 
 base_types = 2
 bases = list()
@@ -33,10 +39,7 @@ def complexity_test(algorithm, log_level=logging.WARNING, timeout=30):
     the complexity testing must fit in.
     """
     algorithm = algorithm()
-    try:
-        algorithm.is_decorated()
-    except AttributeError:
-        from complexity_counter import TestedAlgorithmError
+    if 'is_decorated' not in dir(algorithm):
         raise TestedAlgorithmError("Provided class is not decorated by "
                                    "@Complex_count")
 
@@ -51,23 +54,20 @@ def complexity_test(algorithm, log_level=logging.WARNING, timeout=30):
         timings = timings[:first[0][0]]
         fully_tested = False
 
-    results = list()
     x0_start_point = np.zeros(1)
 
-    for base in bases:
-        results.append(least_squares(residuals, x0_start_point,
-                                     args=(data, timings, base)))
+    results = [least_squares(residuals, x0_start_point,
+                             args=(data, timings, base)) for base in bases]
 
-    costs = [result.cost for result in results]
-    base_index = costs.index(min(costs))
-    factors = list(results[base_index].x)
-    complexity_index = int(base_index / base_types)
+    costs = [result.cost for result in results]  # create list of costs for
+    # every result
+    base_index = costs.index(min(costs))  # minimal cost points the best result
+    factors = list(results[base_index].x)  # get the factors for the
+    # corresponding base
 
     computation_complexity = user_friendly_complexity(fully_tested,
-                                                      complexity_index,
                                                       base_index)
 
-    from complexity_counter import TimeItResult
     return TimeItResult(computation_complexity, factors, bases[base_index],
                         data, timings)
 
@@ -75,7 +75,7 @@ def complexity_test(algorithm, log_level=logging.WARNING, timeout=30):
 def test_timings(algorithm, timeout):
     """This function tests the times of a given algorithm"""
 
-    time_left = timeout
+    signal.signal(signal.SIGABRT, signalhandler)
 
     range_of_tests = 5
     number_of_tries = 5
@@ -83,75 +83,80 @@ def test_timings(algorithm, timeout):
     data = np.array([5 ** (x % range_of_tests)
                      for x in range(1, number_of_tries * range_of_tests + 1)])
     timings = np.zeros(range_of_tests * number_of_tries)
-    import signal
-    signal.signal(signal.SIGALRM, signalhandler)
 
-    for i, number_of_data in enumerate(data):
-        start = time()
+    for i, data_size in enumerate(data):
+        start = time.time()
 
-        time_to_wait = int(round(time_left))
-        if time_to_wait < 1:
-            data[i:] = [-1] * len(data[i:])
-            timings[i:] = [-1] * len(timings[i:])
-            signal.signal(signal.SIGALRM, signal.SIG_DFL)
-            return data, timings
-
-        signal.alarm(time_to_wait)
+        p = start_timeout(timeout)
         try:
-            algorithm.before(number_of_data)
-            timings[i] = algorithm.run(number_of_data)
+            algorithm.before(data_size)
+            timings[i] = algorithm.run(data_size)
         except TimedOutExc:
             data[i:] = [-1] * len(data[i:])
             timings[i:] = [-1] * len(timings[i:])
+            signal.signal(signal.SIGABRT, signal.SIG_DFL)
+            return data, timings
         finally:
-            signal.alarm(0)
+            p.terminate()
             if algorithm.need_to_clean:
-                algorithm.after(number_of_data)
-        time_left = time_left - (time() - start)
+                algorithm.after(data_size)
+        timeout = timeout - (time.time() - start)
 
-    i = 0
-    while timings[len(timings) - 1] < 3000 and i < 30:
-        number_of_data = int(9 ** 3 * 1.5 ** i)
-        i += 1
+    for i in range(30):
+        if timings[-1] > 3000:
+            break
+        data_size = int(9 ** 3 * 1.5 ** i)
         for j in range(2):
-            start = time()
+            start = time.time()
 
-            time_to_wait = int(round(time_left))
-            if time_to_wait < 1:
-                signal.signal(signal.SIGALRM, signal.SIG_DFL)
-                return data, timings
+            data = np.append(data, data_size)
 
-            data = np.append(data, number_of_data)
-            signal.alarm(time_to_wait)
-
+            p = start_timeout(timeout)
             try:
-                algorithm.before(number_of_data)
-                timings = np.append(timings, algorithm.run(number_of_data))
+                algorithm.before(data_size)
+                timings = np.append(timings, algorithm.run(data_size))
             except TimedOutExc:
                 if len(data) != len(timings):
                     data = data[:-1]
+                signal.signal(signal.SIGABRT, signal.SIG_DFL)
+                return data, timings
             finally:
-                signal.alarm(0)
+                p.terminate()
                 if algorithm.need_to_clean:
-                    algorithm.after(number_of_data)
-            time_left = time_left - (time() - start)
+                    algorithm.after(data_size)
+            timeout = timeout - (time.time() - start)
 
-    signal.signal(signal.SIGALRM, signal.SIG_DFL)
+    signal.signal(signal.SIGABRT, signal.SIG_DFL)
     return data, timings
 
 
-def user_friendly_complexity(fully_tested, complexity, base_index):
+def start_timeout(timeout):
+    p = multiprocessing.Process(target=timeout_fun,
+                                args=(timeout, os.getpid()))
+    p.start()
+    return p
+
+
+def user_friendly_complexity(fully_tested, base_index):
+    """Gives computational complexity in user friendly form using notation: 
+    O(f(n)). Returned value is a string"""
     complexities = {
-        0: {0: "O(c)", 1: "O(n)"},
-        1: {0: "O(log(n))", 1: "O(n log(n))"},
+        0: {0: "O(c)", 1: "O(n)"},  # polynomial complexity
+        1: {0: "O(log(n))", 1: "O(n log(n))"},  # logarithmic complexity
     }
     if not fully_tested:
-        complexity -= 1
+        base_index -= 1  # make assumption that it was worse than the maximum
+        #  of the smaller complexities
 
-    if base_index % base_types == 0:
+    complexity = base_index // base_types  # get the index specifying
+    # the complexity (bases are ordered alternately)
+
+    if base_index % base_types == 0:  # bases are ordered alternately,
+        # so base_index % base_types = 0 means it is polynomial complexity
         computation_complexity = complexities[base_index % base_types].get(
             complexity, str.format("O(n^{})", complexity))
-    else:
+    else:  # since there are only 2 base_types everything is logarithmic
+        # complexity
         computation_complexity = complexities[base_index % base_types].get(
             complexity, str.format("O(n^{} log(n))", complexity))
 
@@ -169,3 +174,12 @@ class TimedOutExc(Exception):
     """
     Raised when a timeout happens
     """
+
+
+def timeout_fun(timeout, pid):
+    end_time = time.time() + timeout
+    while end_time > time.time():
+        time.sleep(0.01)
+    os.kill(pid, signal.SIGABRT)
+
+

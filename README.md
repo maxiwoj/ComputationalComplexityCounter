@@ -40,7 +40,7 @@ class YourClass(Algorithm):
 To test the computation complexity of the algorithm prepared in method run() You need to run:
 
 ```python
-result = complex_test(YourClass)
+result = complexity_test(YourClass)
 ```
     
 As a result you will get a class, that holds information about the complexity of your algorithm.

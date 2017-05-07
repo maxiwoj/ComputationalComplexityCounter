@@ -24,6 +24,8 @@ def complex_count(cls):
                                    "Algorithm class")
 
     class Wrapped(object):
+        is_decorated = True
+
         def __init__(self):
             self.clsInstance = cls()
             self.need_to_clean = False
@@ -46,14 +48,12 @@ def complex_count(cls):
             self.clsInstance.after(complexity)
             self.need_to_clean = False
 
-        def is_decorated(self):
-            return True
-
     return Wrapped
 
 
 def check_time(fun):
     """Function decorator allowing to test time of the decorated function"""
+
     def checked_time_fun(self, number_of_args):
         start = time()
         fun(self, number_of_args)
@@ -68,18 +68,19 @@ def check_time(fun):
 class Algorithm(object):
     """This class should be implemented with your
     own algorithm you want to test computation complexity"""
-    def before(self, number_of_data):
+
+    def before(self, data_size):
         """This method is responsible for preparation data for algorithm to
         test """
         raise NotImplementedError("Tested class should override methods of "
                                   "Algorithm class: before, run, after")
 
-    def run(self, number_of_data):
+    def run(self, data_size):
         """The main method for testing the time of algorithm"""
         raise NotImplementedError("Tested class should override methods of "
                                   "Algorithm class: before, run, after")
 
-    def after(self, number_of_data):
+    def after(self, data_size):
         """Method responsible for cleaning up after testing the time of the
         algorithm """
         raise NotImplementedError("Tested class should override methods of "
@@ -94,6 +95,7 @@ class TimeItResult:
     functions computation_complexity - string representation of the
     complexity in notation: O(f(n))
     """
+
     def __init__(self, computation_complexity, factors, base, data, timings):
         self.data = data
         self.timings = timings
@@ -101,14 +103,14 @@ class TimeItResult:
         self.factors = factors
         self.base = base
 
-    def time_predict(self, number_of_data):
+    def time_predict(self, data_size):
         """This function allows to predict the time needed to
         complete the algorithm for given number_of_data. Note,
         that it's results for small and much bigger number_of_data
         may differ from the real time, that the algorithm needs.
         """
         from complexity_counter import model
-        return model(self.factors, np.array([number_of_data]), self.base)[0]
+        return model(self.factors, np.array([data_size]), self.base)[0]
 
     def max_complexity_predict(self, time):
         """This function allows to predict maximal number_of_data
