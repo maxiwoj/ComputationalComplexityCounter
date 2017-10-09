@@ -14,12 +14,12 @@ Installation
 
 To install use pip:
 
-    $ pip install git+https://github.com/AGHPythonCourse2017/zad2-maxiwoj
+    $ pip install git+https://github.com/maxiwoj/ComputationalComplexityCounter.git
 
 
 Or clone the repo:
 
-    $ git clone https://github.com/AGHPythonCourse2017/zad2-maxiwoj
+    $ git clone https://github.com/maxiwoj/ComputationalComplexityCounter.git
     $ python setup.py install
     
 Usage
